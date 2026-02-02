@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 512
+
+Resources:
+
+# ----------------
+# API LAMBDA
+# ----------------
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.main.handler
+      CodeUri: .
+      Environment:
+        Variables:
+          DATABASE_URL: 'postgresql://neondb_owner:npg_ytG73EfmYpzR@ep-frosty-bird-ahx2boom-pooler.c-3.us-east-1.aws.neon.tech/thelawnrouter?sslmode=require&channel_binding=require'
+          BUCKET_NAME: !Ref PhotoBucket
+          USER_POOL_ID: !Ref UserPool
+          USER_POOL_CLIENT_ID: !Ref UserPoolClient
+      Policies:
+        - S3FullAccessPolicy:
+            BucketName: !Ref PhotoBucket
+      Events:
+        Api:
+          Type: HttpApi
+
+# ----------------
+# WORKER LAMBDA
+# ----------------
+
+  OptimizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.worker_handler.handler
+      CodeUri: .
+      MemorySize: 2048
+      Timeout: 900
+      Events:
+        Queue:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt OptimizeQueue.Arn
+
+  OptimizeQueue:
+    Type: AWS::SQS::Queue
+
+# ----------------
+# S3
+# ----------------
+
+  PhotoBucket:
+    Type: AWS::S3::Bucket
+
+# ----------------
+# COGNITO
+# ----------------
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false

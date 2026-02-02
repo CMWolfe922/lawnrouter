@@ -1,6 +1,11 @@
 from fastapi import FastAPI
-from .routers import route_plans
+from mangum import Mangum
 
-app = FastAPI(title="Lawn Route Optimizer")
+from app.routers import photos, optimization
 
-app.include_router(route_plans.router)
+app = FastAPI()
+
+app.include_router(photos.router)
+app.include_router(optimization.router)
+
+handler = Mangum(app)
