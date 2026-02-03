@@ -48,8 +48,8 @@ class Location(Base):
     customer_id = mapped_column(ForeignKey("customers.id"), index=True)
     customer = relationship("Customer", backref="locations")
     address: Mapped[str]
-    lat: Mapped[Float] = mapped_column(Float)
-    lng: Mapped[Float] = mapped_column(Float)
+    lat: Mapped[float] = mapped_column(Float)
+    lng: Mapped[float] = mapped_column(Float)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
 
@@ -60,10 +60,11 @@ class ServicePlan(Base):
     __tablename__ = "service_plans"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    company_id = mapped_column(ForeignKey("companies.id"), index=True)
     location_id = mapped_column(ForeignKey("locations.id"), index=True)
     location = relationship("Location", backref="service_plans")
     frequency: Mapped[str]  # weekly, biweekly, etc
-    revenue_per_visit: Mapped[Float]
+    revenue_per_visit: Mapped[float]
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     modified_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
@@ -80,8 +81,8 @@ class Vehicle(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     company_id = mapped_column(ForeignKey("companies.id"))
     name: Mapped[str] = mapped_column(String(255))
-    mpg: Mapped[Float]
-    maintenance_cost_per_mile: Mapped[Float]
+    mpg: Mapped[float]
+    maintenance_cost_per_mile: Mapped[float]
 
 class Employee(Base):
     __tablename__ = "employees"
@@ -101,14 +102,13 @@ class Crew(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     company_id = mapped_column(ForeignKey("companies.id"))
-    name: Mapped[str] = mapped_column(String(255))  
-    companies = relationship("Company", backref="crews")
+    name: Mapped[str] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     labor_cost_per_hour: Mapped[float] = mapped_column(Numeric(10, 2), default=20.0)
-    
+
     # Relationships
     company = relationship("Company", backref="crews")
-    employee = relationship("Employee", secondary="crew_employees", backref="crews")
+    employees = relationship("Employee", secondary="crew_employees", backref="crews_assigned")
 
 class CrewEmployee(Base):
     __tablename__ = "crew_employees"
@@ -138,10 +138,10 @@ class Route(Base):
     vehicle_id = mapped_column(ForeignKey("vehicles.id"))
     crew_id = mapped_column(ForeignKey("crews.id"))
 
-    total_revenue: Mapped[Float] = mapped_column(Numeric(12, 2), default=0)
-    total_cost: Mapped[Float] = mapped_column(Numeric(12, 2), default=0)
-    total_profit: Mapped[Float] = mapped_column(Numeric(12, 2), default=0)
-    total_miles: Mapped[Float] = mapped_column(Numeric(12, 2), default=0)
+    total_revenue: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
+    total_cost: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
+    total_profit: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
+    total_miles: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
     total_drive_minutes: Mapped[int] = mapped_column(Integer, default=0)
     total_service_minutes: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
@@ -161,7 +161,7 @@ class RoutePlan(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     company_id = mapped_column(ForeignKey("companies.id"))
 
-    start_date: Mapped[Date]
+    start_date: Mapped[datetime.date]
     days: Mapped[int]
     status: Mapped[str] = mapped_column(String(20), default="pending")
 
@@ -171,12 +171,12 @@ class RouteDay(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     plan_id = mapped_column(ForeignKey("route_plans.id"))
-    date: Mapped[Date] = mapped_column(Date, default=datetime.date.today)
+    date: Mapped[datetime.date] = mapped_column(Date, default=datetime.date.today)
     vehicle_id = mapped_column(ForeignKey("vehicles.id"))
     crew_id = mapped_column(ForeignKey("crews.id"))
-    total_revenue: Mapped[Float] = mapped_column(Numeric(12, 2), default=0.0)
-    total_cost: Mapped[Float] = mapped_column(Numeric(12, 2), default=0.0)
-    total_profit: Mapped[Float] = mapped_column(Numeric(12, 2), default=0.0)
+    total_revenue: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
+    total_cost: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
+    total_profit: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
 
 
 class RouteStop(Base):
@@ -187,8 +187,8 @@ class RouteStop(Base):
     location_id = mapped_column(ForeignKey("locations.id"))
     route_id = mapped_column(ForeignKey("routes.id"), nullable=True)
     order: Mapped[int]
-    revenue: Mapped[Float] = mapped_column(Numeric(12, 2), default=0.0)
-    segment_miles: Mapped[Float] = mapped_column(Numeric(12, 3), default=0.0)
+    revenue: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
+    segment_miles: Mapped[float] = mapped_column(Numeric(12, 3), default=0.0)
     segment_drive_minutes: Mapped[int] = mapped_column(Integer, default=0)
     route_stop_time_started: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     route_stop_time_ended: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
@@ -206,7 +206,7 @@ class RouteStopServiceRecord(Base):
     location_id = mapped_column(ForeignKey("locations.id"))
     employee_id = mapped_column(ForeignKey("employees.id"))
     crew_id = mapped_column(ForeignKey("crews.id"))
-    date: Mapped[Date] = mapped_column(Date, default=datetime.date.today)
+    date: Mapped[datetime.date] = mapped_column(Date, default=datetime.date.today)
     service_start_time: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     service_end_time: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     service_minutes: Mapped[int] = mapped_column(Integer, default=0)
@@ -218,21 +218,21 @@ class Expense(Base):
     __tablename__ = "expenses"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     company_id = mapped_column(ForeignKey("companies.id"))
-    date: Mapped[Date] = mapped_column(Date, default=datetime.date.today)
+    date: Mapped[datetime.date] = mapped_column(Date, default=datetime.date.today)
     description: Mapped[str] = mapped_column(String(255))
     expense_type: Mapped[str] = mapped_column(String(50))  
     type: Mapped[str] # e.g., 'fuel', 'maintenance', etc.
-    amount: Mapped[Float] = mapped_column(Numeric(12, 2), default=0.0)
+    amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
 
 class Income(Base):
     __tablename__ = "incomes"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     company_id = mapped_column(ForeignKey("companies.id"))
-    date: Mapped[Date] = mapped_column(Date, default=datetime.date.today)
+    date: Mapped[datetime.date] = mapped_column(Date, default=datetime.date.today)
     description: Mapped[str] = mapped_column(String(255))
     income_type: Mapped[str] = mapped_column(String(50))  
     type: Mapped[str]  # e.g., 'service', 'product_sale', etc.
-    amount: Mapped[Float] = mapped_column(Numeric(12, 2), default=0.0)
+    amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
 
 
 class Depot(Base):
@@ -242,8 +242,8 @@ class Depot(Base):
     company_id = mapped_column(ForeignKey("companies.id"))
     name: Mapped[str] = mapped_column(String(255))
     address: Mapped[str] = mapped_column(String(255))
-    lat: Mapped[Float] = mapped_column(Float, nullable=True, default=0.0)
-    lng: Mapped[Float] = mapped_column(Float, nullable=True, default=0.0)
+    lat: Mapped[float] = mapped_column(Float, nullable=True, default=0.0)
+    lng: Mapped[float] = mapped_column(Float, nullable=True, default=0.0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     modified_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.now(datetime.timezone.utc), onupdate=datetime.datetime.now(datetime.timezone.utc))
@@ -257,23 +257,22 @@ class RevenueRecord(Base):
     __tablename__ = "revenue_records"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     company_id = mapped_column(ForeignKey("companies.id"))
-    date: Mapped[Date] = mapped_column(Date, default=datetime.date.today)
+    date: Mapped[datetime.date] = mapped_column(Date, default=datetime.date.today)
     source: Mapped[str] = mapped_column(String(50))  # e.g., 'service', 'product_sale', 'Landscaping', etc..
-    amount: Mapped[Float] = mapped_column(Numeric(12, 2), default=0.0)
+    amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
 
     # relationships
-    revenues = relationship("Income", backref="revenue_records")
     company = relationship("Company", backref="revenue_records")
+
 
 class ExpenseRecord(Base):
     __tablename__ = "cost_records"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     company_id = mapped_column(ForeignKey("companies.id"))
-    date: Mapped[Date] = mapped_column(Date, default=datetime.date.today)
+    date: Mapped[datetime.date] = mapped_column(Date, default=datetime.date.today)
     source: Mapped[str] = mapped_column(String(255))
-    amount: Mapped[Float] = mapped_column(Numeric(12, 2), default=0.0)
+    amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
 
     # relationships
     company = relationship("Company", backref="cost_records")
-    expenses = relationship("Expense", backref="cost_records")
     
