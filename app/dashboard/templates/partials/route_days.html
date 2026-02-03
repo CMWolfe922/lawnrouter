@@ -1,0 +1,37 @@
+{% if route_days %}
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Revenue</th>
+            <th>Cost</th>
+            <th>Profit</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for day in route_days %}
+        <tr>
+            <td>{{ day.date }}</td>
+            <td>${{ "%.2f"|format(day.total_revenue|float) }}</td>
+            <td>${{ "%.2f"|format(day.total_cost|float) }}</td>
+            <td class="{% if day.total_profit|float >= 0 %}positive{% else %}negative{% endif %}">
+                ${{ "%.2f"|format(day.total_profit|float) }}
+            </td>
+            <td>
+                <button class="btn btn-primary btn-sm"
+                        hx-get="/dashboard/partials/routes-for-day?route_day_id={{ day.id }}"
+                        hx-target="#routesForDay"
+                        hx-indicator=".htmx-indicator">
+                    Load Routes
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+    No route days found for this plan
+</div>
+{% endif %}

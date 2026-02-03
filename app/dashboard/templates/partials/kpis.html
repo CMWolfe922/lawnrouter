@@ -1,0 +1,34 @@
+<div class="kpi-grid">
+    <div class="kpi-item">
+        <div class="kpi-value positive">${{ "%.2f"|format(totals.total_revenue|float) }}</div>
+        <div class="kpi-label">Total Revenue</div>
+    </div>
+    <div class="kpi-item">
+        <div class="kpi-value">${{ "%.2f"|format(totals.total_cost|float) }}</div>
+        <div class="kpi-label">Total Cost</div>
+    </div>
+    <div class="kpi-item">
+        <div class="kpi-value {% if totals.total_profit|float >= 0 %}positive{% else %}negative{% endif %}">
+            ${{ "%.2f"|format(totals.total_profit|float) }}
+        </div>
+        <div class="kpi-label">Total Profit</div>
+    </div>
+    <div class="kpi-item">
+        <div class="kpi-value">{{ "%.1f"|format(totals.total_miles|float) }}</div>
+        <div class="kpi-label">Total Miles</div>
+    </div>
+    <div class="kpi-item">
+        <div class="kpi-value">{{ totals.total_drive_minutes }}</div>
+        <div class="kpi-label">Drive Minutes</div>
+    </div>
+    <div class="kpi-item">
+        <div class="kpi-value">{{ totals.total_service_minutes }}</div>
+        <div class="kpi-label">Service Minutes</div>
+    </div>
+</div>
+
+{% if not plan_id %}
+<p style="text-align: center; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);">
+    No active route plan found
+</p>
+{% endif %}

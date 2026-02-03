@@ -185,6 +185,7 @@ class RouteStop(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     route_day_id = mapped_column(ForeignKey("route_days.id"))
     location_id = mapped_column(ForeignKey("locations.id"))
+    route_id = mapped_column(ForeignKey("routes.id"), nullable=True)
     order: Mapped[int]
     revenue: Mapped[Float] = mapped_column(Numeric(12, 2), default=0.0)
     segment_miles: Mapped[Float] = mapped_column(Numeric(12, 3), default=0.0)
@@ -192,6 +193,10 @@ class RouteStop(Base):
     route_stop_time_started: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     route_stop_time_ended: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
     total_route_stop_minutes: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Relationships
+    location = relationship("Location", backref="route_stops")
+    route = relationship("Route", backref="stops")
 
 class RouteStopServiceRecord(Base):
     __tablename__ = "route_stop_service_records"
@@ -245,7 +250,7 @@ class Depot(Base):
 
     # relationships
     company = relationship("Company", backref="depots")
-    routes = relationship("Route", backref="depots")
+    routes = relationship("Route", backref="depot")
 
 
 class RevenueRecord(Base):

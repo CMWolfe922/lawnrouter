@@ -1,0 +1,48 @@
+{% if location %}
+<div class="customer-card">
+    <h3>{{ location.customer.name if location.customer else 'Unknown Customer' }}</h3>
+    <div class="customer-info">
+        <p>
+            <span class="label">Address:</span><br>
+            {{ location.address }}
+        </p>
+        {% if location.customer %}
+        {% if location.customer.email %}
+        <p>
+            <span class="label">Email:</span><br>
+            <a href="mailto:{{ location.customer.email }}" style="color: var(--accent);">
+                {{ location.customer.email }}
+            </a>
+        </p>
+        {% endif %}
+        {% if location.customer.phone %}
+        <p>
+            <span class="label">Phone:</span><br>
+            <a href="tel:{{ location.customer.phone }}" style="color: var(--accent);">
+                {{ location.customer.phone }}
+            </a>
+        </p>
+        {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- Navigate Button -->
+    <div style="margin-top: 1rem;">
+        <a href="https://www.google.com/maps/dir/?api=1&destination={{ location.lat }},{{ location.lng }}"
+           target="_blank"
+           class="btn btn-primary"
+           style="display: inline-block; text-decoration: none;">
+            Navigate
+        </a>
+    </div>
+
+    <!-- Pricing Box -->
+    <div class="pricing-box" id="pricingBox">
+        <div class="spinner"></div> Loading pricing...
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    Location not found
+</div>
+{% endif %}

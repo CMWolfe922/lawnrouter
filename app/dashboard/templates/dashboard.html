@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <header class="dashboard-header">
+        <h1>LawnRouter Dashboard</h1>
+        <div>
+            <span style="font-size: 0.75rem; color: var(--text-secondary);">
+                Company: {{ company_id[:8] }}...
+            </span>
+        </div>
+    </header>
+
+    <!-- KPIs Card -->
+    <div class="card">
+        <div class="card-header">Key Metrics <span class="htmx-indicator spinner"></span></div>
+        <div id="kpis"
+             hx-get="/dashboard/partials/kpis?company_id={{ company_id }}{% if plan_id %}&plan_id={{ plan_id }}{% endif %}"
+             hx-trigger="load, every 30s"
+             hx-indicator=".htmx-indicator">
+            <div class="empty-state"><div class="spinner"></div> Loading KPIs...</div>
+        </div>
+    </div>
+
+    <!-- Map Card -->
+    <div class="card">
+        <div class="card-header">Route Map</div>
+        <div id="map"></div>
+        <div id="mapStatus">Initializing map...</div>
+        <div class="map-controls">
+            <button class="btn btn-primary btn-sm" onclick="DashboardMap.startLivePolling(15)">
+                Live On (15s)
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="DashboardMap.stopLivePolling()">
+                Live Off
+            </button>
+        </div>
+        <div class="legend">
+            <div class="legend-item"><span class="dot green"></span> Profitable</div>
+            <div class="legend-item"><span class="dot yellow"></span> Low Margin</div>
+            <div class="legend-item"><span class="dot red"></span> Losing Money</div>
+            <div class="legend-item"><span class="dot blue"></span> Depot</div>
+        </div>
+    </div>
+
+    <!-- Route Days Card -->
+    <div class="card">
+        <div class="card-header">Route Days <span class="htmx-indicator spinner"></span></div>
+        <div id="routeDays"
+             hx-get="/dashboard/partials/route-days?company_id={{ company_id }}{% if plan_id %}&plan_id={{ plan_id }}{% endif %}"
+             hx-trigger="load"
+             hx-indicator=".htmx-indicator">
+            <div class="empty-state"><div class="spinner"></div> Loading route days...</div>
+        </div>
+    </div>
+
+    <!-- Two Column Section: Routes List + Customer Card -->
+    <div class="two-column">
+        <div class="card">
+            <div class="card-header">Routes</div>
+            <div id="routesForDay">
+                <div class="empty-state">Select a day to view routes</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Customer Details</div>
+            <div id="customerCard">
+                <div class="empty-state">Click a stop to view customer</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Route Detail (Stops Table) -->
+    <div class="card">
+        <div class="card-header">Route Stops</div>
+        <div id="routeDetail">
+            <div class="empty-state">Select a route to view stops</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

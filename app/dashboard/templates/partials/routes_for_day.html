@@ -1,0 +1,38 @@
+{% if routes %}
+<table>
+    <thead>
+        <tr>
+            <th>Route</th>
+            <th>Revenue</th>
+            <th>Profit</th>
+            <th>Miles</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for route in routes %}
+        <tr>
+            <td>{{ route.name or 'Route ' ~ loop.index }}</td>
+            <td>${{ "%.2f"|format(route.total_revenue|float) }}</td>
+            <td class="{% if route.total_profit|float >= 0 %}positive{% else %}negative{% endif %}">
+                ${{ "%.2f"|format(route.total_profit|float) }}
+            </td>
+            <td>{{ "%.1f"|format(route.total_miles|float) }}</td>
+            <td>
+                <button class="btn btn-primary btn-sm"
+                        hx-get="/dashboard/partials/route-detail?route_id={{ route.id }}"
+                        hx-target="#routeDetail"
+                        hx-indicator=".htmx-indicator"
+                        onclick="DashboardMap.loadRoute('{{ route.id }}')">
+                    View Stops
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+    No routes found for this day
+</div>
+{% endif %}

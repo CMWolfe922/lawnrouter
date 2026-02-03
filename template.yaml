@@ -1,6 +1,16 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
+Parameters:
+  MapboxPublicToken:
+    Type: String
+    Default: ''
+    Description: Mapbox public token for dashboard maps
+  MapStyle:
+    Type: String
+    Default: 'mapbox://styles/mapbox/streets-v12'
+    Description: Mapbox style URL
+
 Globals:
   Function:
     Runtime: python3.12
@@ -24,6 +34,9 @@ Resources:
           BUCKET_NAME: !Ref PhotoBucket
           USER_POOL_ID: !Ref UserPool
           USER_POOL_CLIENT_ID: !Ref UserPoolClient
+          STATIC_URL: !Sub 'https://${StaticCDN.DomainName}'
+          MAPBOX_PUBLIC_TOKEN: !Ref MapboxPublicToken
+          MAP_STYLE: !Ref MapStyle
       Policies:
         - S3FullAccessPolicy:
             BucketName: !Ref PhotoBucket
@@ -42,6 +55,9 @@ Resources:
       CodeUri: .
       MemorySize: 2048
       Timeout: 900
+      Environment:
+        Variables:
+          DATABASE_URL: 'postgresql://neondb_owner:npg_ytG73EfmYpzR@ep-frosty-bird-ahx2boom-pooler.c-3.us-east-1.aws.neon.tech/thelawnrouter?sslmode=require&channel_binding=require'
       Events:
         Queue:
           Type: SQS
@@ -52,11 +68,81 @@ Resources:
     Type: AWS::SQS::Queue
 
 # ----------------
-# S3
+# S3 - Photo Bucket
 # ----------------
 
   PhotoBucket:
     Type: AWS::S3::Bucket
+
+# ----------------
+# S3 - Static Assets Bucket
+# ----------------
+
+  StaticBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  StaticBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StaticBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontAccess
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${StaticBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${StaticCDN}'
+
+# ----------------
+# CLOUDFRONT - Static Assets CDN
+# ----------------
+
+  StaticCDN:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt StaticBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+            OriginAccessControlId: !Ref StaticOAC
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # CachingOptimized
+          Compress: true
+        PriceClass: PriceClass_100
+        HttpVersion: http2
+
+  StaticOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub '${AWS::StackName}-static-oac'
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
 
 # ----------------
 # COGNITO
@@ -70,3 +156,32 @@ Resources:
     Properties:
       UserPoolId: !Ref UserPool
       GenerateSecret: false
+
+# ----------------
+# OUTPUTS
+# ----------------
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+
+  StaticURL:
+    Description: CloudFront URL for static assets
+    Value: !Sub 'https://${StaticCDN.DomainName}'
+
+  StaticBucketName:
+    Description: S3 bucket name for static assets
+    Value: !Ref StaticBucket
+
+  PhotoBucketName:
+    Description: S3 bucket name for photos
+    Value: !Ref PhotoBucket
+
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref UserPool
+
+  UserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value: !Ref UserPoolClient

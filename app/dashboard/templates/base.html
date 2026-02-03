@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LawnRouter Dashboard</title>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Mapbox GL JS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+
+    <!-- Dashboard CSS -->
+    {% if STATIC_URL %}
+    <link rel="stylesheet" href="{{ STATIC_URL }}/dashboard.css">
+    {% else %}
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #0f3460;
+            --text-primary: #eee;
+            --text-secondary: #aaa;
+            --accent: #e94560;
+            --success: #4ade80;
+            --warning: #facc15;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-header {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .kpi-item {
+            text-align: center;
+        }
+
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .kpi-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .kpi-value.positive { color: var(--success); }
+        .kpi-value.negative { color: var(--danger); }
+
+        #map {
+            width: 100%;
+            height: 400px;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #d63d55;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card);
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .legend {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot.green { background: var(--success); }
+        .dot.yellow { background: var(--warning); }
+        .dot.red { background: var(--danger); }
+        .dot.blue { background: #3b82f6; }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 0.5rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        th {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        tr.clickable {
+            cursor: pointer;
+        }
+
+        tr.selected {
+            background: rgba(233, 69, 96, 0.2);
+        }
+
+        .customer-card {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .customer-card h3 {
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+        }
+
+        .customer-info p {
+            margin: 0.25rem 0;
+            font-size: 0.875rem;
+        }
+
+        .customer-info .label {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        .pricing-box {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+
+        .pricing-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.25rem 0;
+            font-size: 0.875rem;
+        }
+
+        .suggested-price {
+            background: var(--warning);
+            color: #000;
+            padding: 0.5rem;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid var(--text-secondary);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .htmx-indicator {
+            display: none;
+        }
+
+        .htmx-request .htmx-indicator {
+            display: inline-block;
+        }
+
+        .htmx-request.htmx-indicator {
+            display: inline-block;
+        }
+
+        #mapStatus {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+    </style>
+    {% endif %}
+</head>
+<body>
+    <script>
+        window.__MAPBOX_PUBLIC_TOKEN__ = "{{ MAPBOX_PUBLIC_TOKEN }}";
+        window.__MAP_STYLE__ = "{{ MAP_STYLE }}";
+    </script>
+
+    {% block content %}{% endblock %}
+
+    <!-- Dashboard JS -->
+    {% if STATIC_URL %}
+    <script src="{{ STATIC_URL }}/dashboard.js"></script>
+    {% else %}
+    <script>
+        // Inline dashboard.js for development
+        const DashboardMap = {
+            map: null,
+            selectedRouteId: null,
+            selectedStopId: null,
+            liveInterval: null,
+
+            initMap(token, style) {
+                if (!token) {
+                    console.warn('No Mapbox token provided');
+                    return;
+                }
+
+                mapboxgl.accessToken = token;
+                this.map = new mapboxgl.Map({
+                    container: 'map',
+                    style: style || 'mapbox://styles/mapbox/streets-v12',
+                    center: [-98.5795, 39.8283], // Center of US
+                    zoom: 4
+                });
+
+                this.map.on('load', () => {
+                    this._setupLayers();
+                    this._setupClickHandlers();
+                    this._updateStatus('Map ready');
+                });
+            },
+
+            _setupLayers() {
+                // Add empty GeoJSON source
+                this.map.addSource('route-geojson', {
+                    type: 'geojson',
+                    data: { type: 'FeatureCollection', features: [] }
+                });
+
+                // Route line layer
+                this.map.addLayer({
+                    id: 'route-line',
+                    type: 'line',
+                    source: 'route-geojson',
+                    filter: ['==', ['get', 'kind'], 'route_line'],
+                    paint: {
+                        'line-color': '#e94560',
+                        'line-width': 3,
+                        'line-opacity': 0.8
+                    }
+                });
+
+                // Stop circles with profitability colors
+                this.map.addLayer({
+                    id: 'stop-circles',
+                    type: 'circle',
+                    source: 'route-geojson',
+                    filter: ['==', ['get', 'kind'], 'stop'],
+                    paint: {
+                        'circle-radius': 8,
+                        'circle-color': [
+                            'case',
+                            ['<', ['get', 'profit'], 0], '#ef4444',  // red
+                            ['<', ['get', 'profit'], 10], '#facc15', // yellow
+                            '#4ade80' // green
+                        ],
+                        'circle-stroke-width': 2,
+                        'circle-stroke-color': '#fff'
+                    }
+                });
+
+                // Depot circle (blue)
+                this.map.addLayer({
+                    id: 'depot-circle',
+                    type: 'circle',
+                    source: 'route-geojson',
+                    filter: ['==', ['get', 'kind'], 'depot'],
+                    paint: {
+                        'circle-radius': 10,
+                        'circle-color': '#3b82f6',
+                        'circle-stroke-width': 3,
+                        'circle-stroke-color': '#fff'
+                    }
+                });
+
+                // Stop highlight layer
+                this.map.addLayer({
+                    id: 'stop-highlight',
+                    type: 'circle',
+                    source: 'route-geojson',
+                    filter: ['==', ['get', 'location_id'], ''],
+                    paint: {
+                        'circle-radius': 14,
+                        'circle-color': 'transparent',
+                        'circle-stroke-width': 3,
+                        'circle-stroke-color': '#e94560'
+                    }
+                });
+
+                // Stop labels (order numbers)
+                this.map.addLayer({
+                    id: 'stop-labels',
+                    type: 'symbol',
+                    source: 'route-geojson',
+                    filter: ['==', ['get', 'kind'], 'stop'],
+                    layout: {
+                        'text-field': ['get', 'order'],
+                        'text-size': 10,
+                        'text-offset': [0, -1.5]
+                    },
+                    paint: {
+                        'text-color': '#fff'
+                    }
+                });
+            },
+
+            _setupClickHandlers() {
+                // Click on stop
+                this.map.on('click', 'stop-circles', (e) => {
+                    const feature = e.features[0];
+                    const props = feature.properties;
+                    const locationId = props.location_id;
+
+                    // Show popup
+                    new mapboxgl.Popup()
+                        .setLngLat(e.lngLat)
+                        .setHTML(`
+                            <strong>Stop #${props.order}</strong><br>
+                            Revenue: $${props.revenue}<br>
+                            Profit: $${props.profit?.toFixed(2) || 'N/A'}<br>
+                            Service: ${props.service_minutes} min
+                        `)
+                        .addTo(this.map);
+
+                    this.focusStop(locationId);
+                });
+
+                // Cursor change on hover
+                this.map.on('mouseenter', 'stop-circles', () => {
+                    this.map.getCanvas().style.cursor = 'pointer';
+                });
+                this.map.on('mouseleave', 'stop-circles', () => {
+                    this.map.getCanvas().style.cursor = '';
+                });
+            },
+
+            async loadRoute(routeId) {
+                this.selectedRouteId = routeId;
+                this._updateStatus('Loading route...');
+
+                try {
+                    const response = await fetch(`/dashboard/api/route-geojson?route_id=${routeId}`);
+                    if (!response.ok) throw new Error('Failed to load route');
+
+                    const geojson = await response.json();
+                    this.map.getSource('route-geojson').setData(geojson);
+
+                    // Fit bounds to route line
+                    const routeLine = geojson.features.find(f => f.properties.kind === 'route_line');
+                    if (routeLine && routeLine.geometry.coordinates.length > 0) {
+                        const bounds = new mapboxgl.LngLatBounds();
+                        routeLine.geometry.coordinates.forEach(coord => bounds.extend(coord));
+                        this.map.fitBounds(bounds, { padding: 50 });
+                    }
+
+                    this._updateStatus(`Route loaded: ${geojson.features.filter(f => f.properties.kind === 'stop').length} stops`);
+                } catch (err) {
+                    console.error(err);
+                    this._updateStatus('Error loading route');
+                }
+            },
+
+            focusStop(locationId) {
+                this.selectedStopId = locationId;
+
+                // Update highlight filter
+                this.map.setFilter('stop-highlight', ['==', ['get', 'location_id'], locationId]);
+
+                // Find the feature and pan to it
+                const source = this.map.getSource('route-geojson');
+                if (source && source._data) {
+                    const feature = source._data.features.find(
+                        f => f.properties.location_id === locationId
+                    );
+                    if (feature && feature.geometry.type === 'Point') {
+                        this.map.flyTo({
+                            center: feature.geometry.coordinates,
+                            zoom: 15
+                        });
+                    }
+                }
+
+                // Load customer card via HTMX
+                htmx.ajax('GET', `/dashboard/partials/customer-card?location_id=${locationId}`, '#customerCard');
+
+                // Load pricing
+                this._loadPricing(locationId);
+
+                // Highlight table row
+                document.querySelectorAll('#routeDetail tr').forEach(row => {
+                    row.classList.remove('selected');
+                    if (row.dataset.locationId === locationId) {
+                        row.classList.add('selected');
+                    }
+                });
+            },
+
+            async _loadPricing(locationId) {
+                const pricingBox = document.getElementById('pricingBox');
+                if (!pricingBox) return;
+
+                if (!this.selectedRouteId) {
+                    pricingBox.innerHTML = '<p class="empty-state">Select a route first</p>';
+                    return;
+                }
+
+                pricingBox.innerHTML = '<div class="spinner"></div> Loading...';
+
+                try {
+                    const response = await fetch(
+                        `/dashboard/api/stop-pricing?route_id=${this.selectedRouteId}&location_id=${locationId}&target_margin=0.30`
+                    );
+                    if (!response.ok) throw new Error('Failed to load pricing');
+
+                    const data = await response.json();
+                    pricingBox.innerHTML = `
+                        <div class="pricing-row"><span>Revenue:</span><span>$${data.revenue}</span></div>
+                        <div class="pricing-row"><span>Cost:</span><span>$${data.cost}</span></div>
+                        <div class="pricing-row"><span>Profit:</span><span>$${data.profit}</span></div>
+                        <div class="pricing-row"><span>Margin:</span><span>${data.margin.toFixed(1)}%</span></div>
+                        <div class="suggested-price">Suggested: $${data.suggested_price}</div>
+                    `;
+                } catch (err) {
+                    console.error(err);
+                    pricingBox.innerHTML = '<p class="empty-state">Error loading pricing</p>';
+                }
+            },
+
+            startLivePolling(seconds = 15) {
+                this.stopLivePolling();
+                if (!this.selectedRouteId) {
+                    this._updateStatus('Select a route first');
+                    return;
+                }
+
+                this._updateStatus(`Live polling every ${seconds}s`);
+                this.liveInterval = setInterval(() => {
+                    this.loadRoute(this.selectedRouteId);
+                }, seconds * 1000);
+            },
+
+            stopLivePolling() {
+                if (this.liveInterval) {
+                    clearInterval(this.liveInterval);
+                    this.liveInterval = null;
+                    this._updateStatus('Live polling stopped');
+                }
+            },
+
+            _updateStatus(msg) {
+                const el = document.getElementById('mapStatus');
+                if (el) el.textContent = msg;
+            }
+        };
+
+        // Initialize on DOM ready
+        document.addEventListener('DOMContentLoaded', () => {
+            DashboardMap.initMap(window.__MAPBOX_PUBLIC_TOKEN__, window.__MAP_STYLE__);
+        });
+    </script>
+    {% endif %}
+
+    <script>
+        // Initialize map on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof DashboardMap !== 'undefined' && window.__MAPBOX_PUBLIC_TOKEN__) {
+                DashboardMap.initMap(window.__MAPBOX_PUBLIC_TOKEN__, window.__MAP_STYLE__);
+            }
+        });
+    </script>
+</body>
+</html>

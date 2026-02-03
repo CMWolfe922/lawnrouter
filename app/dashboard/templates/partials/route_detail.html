@@ -1,0 +1,30 @@
+{% if stops %}
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Address</th>
+            <th>Revenue</th>
+            <th>Miles</th>
+            <th>Service (min)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for stop in stops %}
+        <tr class="clickable"
+            data-location-id="{{ stop.location_id }}"
+            onclick="DashboardMap.focusStop('{{ stop.location_id }}')">
+            <td>{{ stop.order }}</td>
+            <td>{{ stop.location.address if stop.location else 'Unknown' }}</td>
+            <td>${{ "%.2f"|format(stop.revenue|float) }}</td>
+            <td>{{ "%.2f"|format(stop.segment_miles|float) }}</td>
+            <td>{{ stop.total_route_stop_minutes or stop.location.avg_service_minutes if stop.location else 0 }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+    No stops found for this route
+</div>
+{% endif %}
