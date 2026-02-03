@@ -1,6 +1,36 @@
 from __future__ import annotations
 from math import radians, sin, cos, sqrt, atan2
 from typing import List, Tuple
+import httpx
+
+from ..config import MAPBOX_ACCESS_TOKEN, MAPBOX_BASE_URL
+
+
+async def geocode_address(address: str) -> Tuple[float, float]:
+    """
+    Geocode an address using Mapbox Geocoding API.
+    Returns (lat, lng) tuple.
+    Raises ValueError if geocoding fails.
+    """
+    url = f"{MAPBOX_BASE_URL}/geocoding/v5/mapbox.places/{address}.json"
+    params = {
+        "access_token": MAPBOX_ACCESS_TOKEN,
+        "limit": 1,
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+    features = data.get("features", [])
+    if not features:
+        raise ValueError(f"Could not geocode address: {address}")
+
+    # Mapbox returns [lng, lat] in coordinates
+    coords = features[0]["geometry"]["coordinates"]
+    lng, lat = coords[0], coords[1]
+    return (lat, lng)
 
 
 def haversine_miles(a: Tuple[float, float], b: Tuple[float, float]) -> float:
