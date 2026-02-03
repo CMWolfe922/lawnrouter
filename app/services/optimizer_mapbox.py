@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 import math
 
 from ortools.constraint_solver import pywrapcp, routing_enums_pb2

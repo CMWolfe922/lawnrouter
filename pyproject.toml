@@ -1,0 +1,12 @@
+[project]
+name = "lawnrouter"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "boto3>=1.42.40",
+    "jose>=1.0.0",
+    "mangum>=0.21.0",
+    "requests>=2.32.5",
+]

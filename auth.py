@@ -3,10 +3,15 @@ from jose import jwt
 import requests
 import os
 
-USER_POOL_ID = os.getenv("USER_POOL_ID")
-REGION = "us-east-1"
+from dotenv import load_dotenv
 
-JWKS_URL = f"https://cognito-idp.{REGION}.amazonaws.com/{USER_POOL_ID}/.well-known/jwks.json"
+load_dotenv()
+
+REGION = os.environ.get("AWS_REGION", "us-east-1")
+USER_POOL_ID = os.environ.get("USER_POOL_ID")
+JWKS_URL = os.environ.get("JWKS_URL")
+if not JWKS_URL:
+    JWKS_URL = f"https://cognito-idp.{REGION}.amazonaws.com/{USER_POOL_ID}/.well-known/jwks.json"
 JWKS = requests.get(JWKS_URL).json()
 
 
